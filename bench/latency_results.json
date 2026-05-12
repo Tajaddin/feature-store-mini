@@ -1,0 +1,36 @@
+{
+  "n_cells": 100000,
+  "n_reads": 20000,
+  "write_throughput_per_sec": 394969,
+  "single_get": {
+    "label": "InMemoryStore.get",
+    "n": 20000,
+    "mean_us": 1.066,
+    "p50_us": 0.9,
+    "p95_us": 1.5,
+    "p99_us": 2.1,
+    "p999_us": 23.5,
+    "max_us": 35.9
+  },
+  "multi_get": {
+    "label": "InMemoryStore.multi_get (batch=50)",
+    "n": 400,
+    "mean_us": 18.569,
+    "p50_us": 15.6,
+    "p95_us": 30.7,
+    "p99_us": 47.9,
+    "p999_us": 67.7,
+    "max_us": 71.4
+  },
+  "multi_get_per_key": {
+    "label": "multi_get per-key (amortized)",
+    "n": 400,
+    "mean_us": 0.371,
+    "p50_us": 0.312,
+    "p95_us": 0.614,
+    "p99_us": 0.958,
+    "p999_us": 1.354,
+    "max_us": 1.428
+  },
+  "in_memory_p99_under_2ms": true
+}
