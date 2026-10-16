@@ -8,7 +8,7 @@
 
 ### Parity checker — all 5 divergence types caught
 
-200-test fixture: each named divergence type has its own dedicated test fixture plus an integration test that fires all five in one run.
+Each named divergence type has its own dedicated test, plus an integration test that fires all five in one run (21 tests in total).
 
 | Divergence | What it catches | Test |
 |---|---|---|
