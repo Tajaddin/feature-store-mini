@@ -2,13 +2,13 @@
 
 > Minimal feature store with in-memory + Redis backends and an explicit **online/offline parity checker** covering 5 named divergence types. **p99 single-read latency = 2.1 µs** on 100K-cell in-memory store. The kind of thing every senior MLE has written by hand at some point.
 
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![Tests](https://img.shields.io/badge/tests-24%20passing-brightgreen)](#tests) [![Python](https://img.shields.io/badge/python-3.10%2B-blue)]()
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE) [![Tests](https://img.shields.io/badge/tests-31%20passing-brightgreen)](#tests) [![Python](https://img.shields.io/badge/python-3.10%2B-blue)]()
 
 ## Hero benchmark
 
 ### Parity checker — all 5 divergence types caught
 
-Each named divergence type has its own dedicated test, plus an integration test that fires all five in one run (24 tests in total).
+Each named divergence type has its own dedicated test, plus an integration test that fires all five in one run (31 tests in total).
 
 | Divergence | What it catches | Test |
 |---|---|---|
@@ -117,7 +117,7 @@ store = OnlineOfflineStore(
 )
 ```
 
-`RedisStore` stores each value as a JSON blob and uses the Redis `EX` TTL when `FeatureSpec.ttl_secs` is set. A blob that isn't valid JSON or has no `event_time` reads as missing, so the parity checker reports it instead of treating a value of unknown age as fresh.
+`RedisStore` stores each value as a JSON blob and uses the Redis `EX` TTL when `FeatureSpec.ttl_secs` is set. A blob that isn't a JSON object with a numeric `event_time` reads as missing, so the parity checker reports it instead of treating a value of unknown age as fresh.
 
 ## Catching real-world divergence
 
@@ -155,7 +155,7 @@ pytest -q
 ```
 
 ```
-24 passed in 1.28s
+31 passed in 1.88s
 ```
 
 Includes hypothesis property tests on round-trip serialization. The five named divergence tests + the integration test prove the hero metric directly.
@@ -179,7 +179,7 @@ Includes hypothesis property tests on round-trip serialization. The five named d
 │   ├── spec.py       # FeatureSpec + FeatureValue
 │   ├── stores.py     # InMemoryStore + RedisStore + OnlineOfflineStore wrapper
 │   └── parity.py     # ParityChecker, 5 named DivergenceTypes, ParityReport
-├── tests/            # 24 pytest cases (incl. hypothesis property tests)
+├── tests/            # 31 pytest cases (incl. hypothesis property tests)
 └── bench/
     ├── latency.py    # 100K-cell single-threaded benchmark
     └── latency_results.json

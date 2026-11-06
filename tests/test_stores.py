@@ -109,3 +109,19 @@ def test_redis_decode_reads_its_own_blob() -> None:
 def test_redis_decode_rejects_blob_without_event_time(blob: dict) -> None:
     # Defaulting the event time to now would make a value of unknown age look fresh.
     assert RedisStore._decode(json.dumps(blob)) is None
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        b"\xff\xfe",
+        b"5",
+        b"[1, 2]",
+        b'"text"',
+        b'{"value": 7, "event_time": "soon"}',
+        b'{"value": 7, "event_time": [100.0]}',
+        b'{"value": 7, "event_time": 100.0, "stored_at": null}',
+    ],
+)
+def test_redis_decode_reads_malformed_blob_as_missing(raw: bytes) -> None:
+    assert RedisStore._decode(raw) is None
