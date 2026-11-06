@@ -160,9 +160,12 @@ class RedisStore:
             data = json.loads(raw)
         except json.JSONDecodeError:
             return None
+        if data.get("event_time") is None:
+            # Not a blob set() wrote; its age is unknown, so don't serve it as fresh.
+            return None
         return FeatureValue(
             value=data.get("value"),
-            event_time=float(data.get("event_time", time.time())),
+            event_time=float(data["event_time"]),
             stored_at=float(data.get("stored_at", time.time())),
         )
 

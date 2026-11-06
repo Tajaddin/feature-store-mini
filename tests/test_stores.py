@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import time
 
 import pytest
 from hypothesis import given, strategies as st
 
-from feature_store_mini import FeatureSpec, FeatureValue, InMemoryStore, OnlineOfflineStore
+from feature_store_mini import FeatureSpec, FeatureValue, InMemoryStore, OnlineOfflineStore, RedisStore
 
 
 def test_in_memory_set_get_roundtrip() -> None:
@@ -97,3 +98,14 @@ def test_feature_value_is_stale() -> None:
     stale = FeatureValue(value=1, event_time=now - 3600)
     assert fresh.is_stale(spec, now=now) is False
     assert stale.is_stale(spec, now=now) is True
+
+
+def test_redis_decode_reads_its_own_blob() -> None:
+    blob = json.dumps({"value": 7, "event_time": 100.0, "stored_at": 101.0}).encode()
+    assert RedisStore._decode(blob) == FeatureValue(value=7, event_time=100.0, stored_at=101.0)
+
+
+@pytest.mark.parametrize("blob", [{"value": 7, "stored_at": 101.0}, {"value": 7, "event_time": None}])
+def test_redis_decode_rejects_blob_without_event_time(blob: dict) -> None:
+    # Defaulting the event time to now would make a value of unknown age look fresh.
+    assert RedisStore._decode(json.dumps(blob)) is None
