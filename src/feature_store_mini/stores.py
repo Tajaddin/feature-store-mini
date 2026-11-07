@@ -154,17 +154,21 @@ class RedisStore:
     def _decode(raw: Any) -> FeatureValue | None:
         if raw is None:
             return None
-        if isinstance(raw, bytes):
-            raw = raw.decode("utf-8")
         try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
+            data = json.loads(raw.decode("utf-8") if isinstance(raw, bytes) else raw)
+        except (UnicodeDecodeError, json.JSONDecodeError):
             return None
-        return FeatureValue(
-            value=data.get("value"),
-            event_time=float(data.get("event_time", time.time())),
-            stored_at=float(data.get("stored_at", time.time())),
-        )
+        if not isinstance(data, dict) or data.get("event_time") is None:
+            # Not a blob set() wrote; its age is unknown, so don't serve it as fresh.
+            return None
+        try:
+            return FeatureValue(
+                value=data.get("value"),
+                event_time=float(data["event_time"]),
+                stored_at=float(data.get("stored_at", time.time())),
+            )
+        except (TypeError, ValueError):
+            return None
 
 
 # ---------------------------------------------------------------------------

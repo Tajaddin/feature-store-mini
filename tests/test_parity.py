@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import fnmatch
+import json
 import time
 
 import pytest
@@ -12,6 +14,7 @@ from feature_store_mini import (
     InMemoryStore,
     OnlineOfflineStore,
     ParityChecker,
+    RedisStore,
 )
 
 
@@ -152,3 +155,42 @@ def test_both_missing_is_not_a_divergence() -> None:
     store = _store()
     report = ParityChecker(store).check(spec, ["never-written"])
     assert report.divergences == []
+
+
+class _DictRedis:
+    """The part of the redis-py client RedisStore calls, backed by a dict."""
+
+    def __init__(self) -> None:
+        self.data: dict[str, bytes] = {}
+
+    def get(self, key: str) -> bytes | None:
+        return self.data.get(key)
+
+    def set(self, key: str, value: str, ex: int | None = None) -> None:
+        self.data[key] = value.encode()
+
+    def mget(self, keys: list[str]) -> list[bytes | None]:
+        return [self.data.get(k) for k in keys]
+
+    def delete(self, key: str) -> None:
+        self.data.pop(key, None)
+
+    def scan_iter(self, match: str) -> list[str]:
+        return [k for k in self.data if fnmatch.fnmatchcase(k, match)]
+
+
+def test_redis_blob_without_event_time_is_reported_online_missing() -> None:
+    spec = FeatureSpec(name="x", dtype=int)
+    client = _DictRedis()
+    store = OnlineOfflineStore(online=RedisStore(client, spec=spec), offline=InMemoryStore())
+    now = time.time()
+    store.write(spec, "ok", 1, event_time=now)
+    store.write(spec, "bad", 2, event_time=now)
+    # Overwritten by something other than RedisStore.set(): the value's age is unknown.
+    client.set("fsm:x:bad", json.dumps({"value": 2}))
+
+    report = ParityChecker(store).check(spec, ["ok", "bad"], now=now)
+
+    assert [(d.type, d.entity_id, d.detail) for d in report.divergences] == [
+        (DivergenceType.MISSING, "bad", "online missing")
+    ]
